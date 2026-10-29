@@ -72,6 +72,14 @@ DB 파일: ...\261026\todo.db
 | --- | --- |
 | ![A 재시작 후](docs/screenshots/supabase-3-user-a-after-restart.png) | ![B](docs/screenshots/supabase-4-user-b.png) |
 
+Supabase 대시보드 Table Editor의 `todos` 표:
+
+- 앱에서 추가한 계정 A의 할 일 4개가 저장되어 있고, 모든 행에 A의 `user_id`가 기록되었다.
+- 화면 위쪽에 **RLS policies 4개**(조회·추가·수정·삭제)가 적용되어 있다.
+- id 2가 없는 것은 앱에서 "삭제할 할 일"을 삭제했기 때문이다. (삭제가 DB에 반영됨)
+
+![Supabase Table Editor - todos](docs/screenshots/supabase-5-table-editor.jpg)
+
 `npm run verify:rls` 실행 결과:
 
 ```text
