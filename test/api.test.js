@@ -272,3 +272,50 @@ describe('로그인이 필요한 모드 (길 B 흐름)', () => {
     assert.equal(stillThere.is_completed, false);
   });
 });
+
+describe('보안 설정', () => {
+  test('보안 헤더가 붙고 서버 종류(X-Powered-By)는 숨긴다', async () => {
+    const db = openDatabase(':memory:');
+    const repository = createSqliteTodoRepository(db);
+    const app = createApp({ repositoryFor: () => repository });
+    const server = await new Promise((resolve) => {
+      const s = app.listen(0, () => resolve(s));
+    });
+    const res = await fetch(`http://localhost:${server.address().port}/`);
+    await new Promise((resolve) => server.close(resolve));
+    db.close();
+
+    assert.equal(res.headers.get('x-powered-by'), null);
+    assert.equal(res.headers.get('x-frame-options'), 'SAMEORIGIN');
+    assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+    const csp = res.headers.get('content-security-policy');
+    assert.match(csp, /script-src 'self'/);
+    assert.doesNotMatch(csp, /upgrade-insecure-requests/);
+  });
+
+  test('로그인은 같은 IP에서 15분에 10번까지, 11번째는 429', async () => {
+    // 실제 인증 모듈을 쓴다. 잘못된 이메일 형식으로 보내므로 Supabase에 요청이 나가기 전에 400으로 끝난다.
+    const { createSupabaseAuth } = require('../server/auth/supabaseAuth');
+    const auth = createSupabaseAuth({ url: 'http://127.0.0.1:9', anonKey: 'test-key' });
+    const app = createApp({ auth, repositoryFor: () => null });
+    const server = await new Promise((resolve) => {
+      const s = app.listen(0, () => resolve(s));
+    });
+    const login = () => fetch(`http://localhost:${server.address().port}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'not-an-email', password: '123456' }),
+    });
+
+    try {
+      for (let i = 1; i <= 10; i += 1) {
+        assert.equal((await login()).status, 400, `${i}번째 시도`);
+      }
+      const blocked = await login();
+      assert.equal(blocked.status, 429);
+      assert.match((await blocked.json()).error, /로그인 시도가 너무 많습니다/);
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+});

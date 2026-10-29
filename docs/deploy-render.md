@@ -23,6 +23,7 @@ DB는 이미 Supabase(클라우드)에 있으므로, Render에는 서버 코드�
 | `DB_PROVIDER` | `supabase` | 필수. Render의 디스크는 재배포 때 지워지므로 SQLite 모드는 쓰지 않는다 |
 | `SUPABASE_URL` | 내 `.env`의 값 | 필수 |
 | `SUPABASE_ANON_KEY` | 내 `.env`의 값 | 필수 |
+| `TRUST_PROXY` | `1` | 필수. Render는 프록시를 거쳐 요청을 전달하므로, 이 값이 있어야 로그인 시도 제한이 실제 접속자 IP별로 동작한다 |
 | `PORT` | 입력하지 않음 | Render가 자동으로 넣어 주고, 서버는 `process.env.PORT`를 읽는다 |
 
 - `.env` 파일은 GitHub에 올리지 않았으므로, 값은 Render 화면에 직접 입력한다.
@@ -35,7 +36,7 @@ DB는 이미 Supabase(클라우드)에 있으므로, Render에는 서버 코드�
 2. <https://render.com> 에 GitHub 계정으로 가입한다.
 3. **New + → Web Service**를 누르고 `my-todo` 저장소를 연결한다.
 4. 위 표대로 빌드·시작 명령, 요금제, 리전을 입력한다.
-5. **Environment Variables**에 위 3개 값을 입력한다.
+5. **Environment Variables**에 위 4개 값을 입력한다.
 6. **Create Web Service**를 누르고 로그에 `My Todo 실행 중`이 나올 때까지 기다린다.
 
 ## 배포 후 확인 방법

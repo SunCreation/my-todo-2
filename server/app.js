@@ -1,5 +1,6 @@
 const path = require('node:path');
 const express = require('express');
+const helmet = require('helmet');
 const {
   parseListQuery,
   parseNewTodo,
@@ -16,6 +17,12 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 // 저장소 함수는 길 B에서 비동기이므로 모두 await로 호출한다.
 function createApp({ repositoryFor, auth = null }) {
   const app = express();
+  // 보안 헤더: 서버 종류(X-Powered-By) 숨김, 다른 사이트의 iframe 삽입 차단,
+  // CSP로 이 서버의 스크립트만 실행 허용 등.
+  // upgrade-insecure-requests는 http://localhost 요청까지 https로 바꿀 수 있어 끈다.
+  app.use(helmet({
+    contentSecurityPolicy: { directives: { upgradeInsecureRequests: null } },
+  }));
   app.use(express.json());
   app.use(express.static(PUBLIC_DIR));
 
