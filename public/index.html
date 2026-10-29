@@ -30,6 +30,10 @@
     <!-- 왼쪽 메뉴 -->
     <aside class="sidebar">
       <div class="brand">My Todo</div>
+      <div class="account" id="account" hidden>
+        <span class="account-email" id="account-email"></span>
+        <button type="button" class="link-button" id="logout-button">로그아웃</button>
+      </div>
       <nav>
         <ul class="menu" id="main-menu">
           <li><button type="button" class="menu-item" data-view="all">
@@ -46,10 +50,6 @@
         <div class="menu-heading">카테고리</div>
         <ul class="menu" id="category-menu"></ul>
       </nav>
-      <div class="account" id="account" hidden>
-        <span class="account-email" id="account-email"></span>
-        <button type="button" class="secondary-button" id="logout-button">로그아웃</button>
-      </div>
     </aside>
 
     <!-- 오른쪽 메인 화면 -->

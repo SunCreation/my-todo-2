@@ -94,20 +94,36 @@ button, input, select { font: inherit; color: inherit; }
   padding: 20px 12px;
 }
 
+/* 로그인한 계정 (제목 바로 아래) */
 .account {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-top: auto;
-  padding: 16px 12px 0;
-  border-top: 1px solid var(--border);
+  margin: -8px 0 16px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: #fff;
+  border: 1px solid var(--border);
 }
 
 .account-email {
+  min-width: 0;
   font-size: 13px;
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }
+
+.link-button {
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.link-button:hover { text-decoration: underline; }
 
 .brand {
   font-size: 20px;
