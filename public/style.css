@@ -51,8 +51,35 @@ button, input, select { font: inherit; color: inherit; }
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
-.auth-title { margin: 0; font-size: 24px; }
-.auth-subtitle { margin: 6px 0 20px; color: var(--text-muted); font-size: 14px; }
+.auth-title { margin: 0 0 16px; font-size: 24px; }
+.auth-subtitle { margin: 12px 0 8px; color: var(--text-muted); font-size: 14px; }
+
+/* 로그인 | 회원가입 탭 */
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-tab:hover { color: var(--text); }
+
+.auth-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+#auth-confirm-field { display: flex; flex-direction: column; }
 .auth-label { margin: 10px 0 6px; font-size: 13px; font-weight: 600; }
 
 .auth-card input {
@@ -72,8 +99,7 @@ button, input, select { font: inherit; color: inherit; }
   font-size: 14px;
 }
 
-.auth-actions { display: flex; gap: 8px; margin-top: 20px; }
-.auth-actions button { flex: 1; padding: 10px; }
+.auth-submit { margin-top: 20px; padding: 10px; }
 
 .secondary-button {
   padding: 8px 14px;

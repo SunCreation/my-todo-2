@@ -16,6 +16,7 @@ const state = {
   view: 'all',
   category: null,
   authRequired: false, // Supabase 모드이면 true
+  authMode: 'login', // 로그인 화면의 탭: login | signup
   session: null, // { access_token, refresh_token, expires_at, user }
 };
 
@@ -25,6 +26,10 @@ const el = {
   authForm: document.getElementById('auth-form'),
   authEmail: document.getElementById('auth-email'),
   authPassword: document.getElementById('auth-password'),
+  authConfirmField: document.getElementById('auth-confirm-field'),
+  authPasswordConfirm: document.getElementById('auth-password-confirm'),
+  authSubtitle: document.getElementById('auth-subtitle'),
+  authSubmit: document.getElementById('auth-submit'),
   authError: document.getElementById('auth-error'),
   authInfo: document.getElementById('auth-info'),
   account: document.getElementById('account'),
@@ -326,13 +331,58 @@ function showAuthView(message = '') {
   el.authEmail.focus();
 }
 
-el.authForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const action = event.submitter?.dataset.action === 'signup' ? 'signup' : 'login';
-  const buttons = el.authForm.querySelectorAll('button');
-  buttons.forEach((b) => { b.disabled = true; });
+const AUTH_MODES = {
+  login: {
+    subtitle: '로그인하면 내 할 일만 볼 수 있습니다.',
+    submit: '로그인',
+    passwordAutocomplete: 'current-password',
+  },
+  signup: {
+    subtitle: '이메일과 비밀번호로 새 계정을 만듭니다.',
+    submit: '회원가입',
+    passwordAutocomplete: 'new-password',
+  },
+};
+
+// 로그인 / 회원가입 탭 전환. 회원가입에서만 비밀번호 확인 칸을 보여 준다.
+function setAuthMode(mode) {
+  state.authMode = mode;
+  const config = AUTH_MODES[mode];
+  el.authForm.querySelectorAll('.auth-tab').forEach((tab) => {
+    const active = tab.dataset.mode === mode;
+    tab.classList.toggle('active', active);
+    tab.setAttribute('aria-selected', String(active));
+  });
+  el.authSubtitle.textContent = config.subtitle;
+  el.authSubmit.textContent = config.submit;
+  el.authPassword.autocomplete = config.passwordAutocomplete;
+  el.authConfirmField.hidden = mode !== 'signup';
+  el.authPasswordConfirm.required = mode === 'signup';
+  el.authPasswordConfirm.value = '';
   el.authError.hidden = true;
   el.authInfo.hidden = true;
+}
+
+el.authForm.querySelector('.auth-tabs').addEventListener('click', (event) => {
+  const tab = event.target.closest('.auth-tab');
+  if (tab) setAuthMode(tab.dataset.mode);
+});
+
+el.authForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const action = state.authMode;
+  el.authError.hidden = true;
+  el.authInfo.hidden = true;
+
+  if (action === 'signup' && el.authPassword.value !== el.authPasswordConfirm.value) {
+    el.authError.textContent = '비밀번호와 비밀번호 확인이 일치하지 않습니다.';
+    el.authError.hidden = false;
+    el.authPasswordConfirm.focus();
+    return;
+  }
+
+  const buttons = el.authForm.querySelectorAll('button');
+  buttons.forEach((b) => { b.disabled = true; });
 
   try {
     const result = await api('POST', `/api/auth/${action}`, {
@@ -346,6 +396,7 @@ el.authForm.addEventListener('submit', async (event) => {
     }
     saveSession(result);
     el.authPassword.value = '';
+    el.authPasswordConfirm.value = '';
     await startApp();
   } catch (err) {
     el.authError.textContent = err.message;
@@ -358,6 +409,7 @@ el.authForm.addEventListener('submit', async (event) => {
 el.logoutButton.addEventListener('click', () => {
   saveSession(null);
   el.list.replaceChildren();
+  setAuthMode('login');
   showAuthView();
 });
 
