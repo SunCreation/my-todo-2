@@ -9,13 +9,27 @@ const EMPTY_TEXTS = {
 };
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
+const SESSION_KEY = 'mytodo.session';
+
 const state = {
   categories: [],
   view: 'all',
   category: null,
+  authRequired: false, // Supabase 모드이면 true
+  session: null, // { access_token, refresh_token, expires_at, user }
 };
 
 const el = {
+  authView: document.getElementById('auth-view'),
+  appView: document.getElementById('app-view'),
+  authForm: document.getElementById('auth-form'),
+  authEmail: document.getElementById('auth-email'),
+  authPassword: document.getElementById('auth-password'),
+  authError: document.getElementById('auth-error'),
+  authInfo: document.getElementById('auth-info'),
+  account: document.getElementById('account'),
+  accountEmail: document.getElementById('account-email'),
+  logoutButton: document.getElementById('logout-button'),
   mainMenu: document.getElementById('main-menu'),
   categoryMenu: document.getElementById('category-menu'),
   todayCount: document.getElementById('today-count'),
@@ -47,14 +61,57 @@ function formatDate(ymd) {
   return `${yearPart}${m}월 ${d}일 (${WEEKDAYS[date.getDay()]})`;
 }
 
+// ---------- 로그인 세션 ----------
+
+function loadSession() {
+  try {
+    return JSON.parse(localStorage.getItem(SESSION_KEY));
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(session) {
+  state.session = session;
+  try {
+    if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch {
+    // 저장소를 쓸 수 없는 환경이면 이번 탭에서만 로그인 상태를 유지한다.
+  }
+}
+
 // ---------- API ----------
 
-async function api(method, url, body) {
-  const res = await fetch(url, {
-    method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
+function send(method, url, body) {
+  const headers = body ? { 'Content-Type': 'application/json' } : {};
+  if (state.session) headers.Authorization = `Bearer ${state.session.access_token}`;
+  return fetch(url, { method, headers, body: body ? JSON.stringify(body) : undefined });
+}
+
+// access token이 만료되었으면 refresh token으로 새 토큰을 받는다. 성공하면 true.
+async function refreshSession() {
+  if (!state.session?.refresh_token) return false;
+  const res = await fetch('/api/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: state.session.refresh_token }),
   });
+  if (!res.ok) return false;
+  saveSession(await res.json());
+  return true;
+}
+
+async function api(method, url, body) {
+  let res = await send(method, url, body);
+  if (res.status === 401 && state.authRequired && !url.startsWith('/api/auth/')) {
+    if (await refreshSession()) {
+      res = await send(method, url, body);
+    } else {
+      saveSession(null);
+      showAuthView('로그인이 필요합니다.');
+    }
+  }
   if (res.status === 204) return null;
   const data = await res.json().catch(() => null);
   if (!res.ok) throw new Error(data?.error ?? `요청에 실패했습니다. (${res.status})`);
@@ -258,14 +315,76 @@ el.list.addEventListener('click', async (event) => {
   await refresh();
 });
 
+// ---------- 로그인 화면 ----------
+
+function showAuthView(message = '') {
+  el.appView.hidden = true;
+  el.authView.hidden = false;
+  el.authError.textContent = message;
+  el.authError.hidden = !message;
+  el.authInfo.hidden = true;
+  el.authEmail.focus();
+}
+
+el.authForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const action = event.submitter?.dataset.action === 'signup' ? 'signup' : 'login';
+  const buttons = el.authForm.querySelectorAll('button');
+  buttons.forEach((b) => { b.disabled = true; });
+  el.authError.hidden = true;
+  el.authInfo.hidden = true;
+
+  try {
+    const result = await api('POST', `/api/auth/${action}`, {
+      email: el.authEmail.value,
+      password: el.authPassword.value,
+    });
+    if (result.needsConfirmation) {
+      el.authInfo.textContent = result.message;
+      el.authInfo.hidden = false;
+      return;
+    }
+    saveSession(result);
+    el.authPassword.value = '';
+    await startApp();
+  } catch (err) {
+    el.authError.textContent = err.message;
+    el.authError.hidden = false;
+  } finally {
+    buttons.forEach((b) => { b.disabled = false; });
+  }
+});
+
+el.logoutButton.addEventListener('click', () => {
+  saveSession(null);
+  el.list.replaceChildren();
+  showAuthView();
+});
+
 // ---------- 시작 ----------
+
+async function startApp() {
+  state.categories = await api('GET', '/api/categories');
+  renderCategories();
+  el.account.hidden = !state.authRequired;
+  el.accountEmail.textContent = state.session?.user?.email ?? '';
+  el.authView.hidden = true;
+  el.appView.hidden = false;
+  selectView('all');
+}
 
 async function init() {
   try {
-    state.categories = await api('GET', '/api/categories');
-    renderCategories();
-    selectView('all');
+    const config = await api('GET', '/api/config');
+    state.authRequired = config.authRequired;
+    if (state.authRequired) {
+      state.session = loadSession();
+      if (!state.session) return showAuthView();
+    }
+    await startApp();
   } catch (err) {
+    if (!el.authView.hidden) return; // 저장된 로그인이 만료되어 로그인 화면으로 넘어간 경우
+    el.appView.hidden = false;
     showError(`서버에 연결할 수 없습니다. ${err.message}`);
   }
 }

@@ -24,17 +24,89 @@ body {
 
 button, input, select { font: inherit; color: inherit; }
 
+[hidden] { display: none !important; }
+
 .layout {
   display: grid;
   grid-template-columns: 248px 1fr;
   min-height: 100vh;
 }
 
+/* 로그인 화면 */
+.auth {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: var(--sidebar-bg);
+}
+
+.auth-card {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  padding: 32px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.auth-title { margin: 0; font-size: 24px; }
+.auth-subtitle { margin: 6px 0 20px; color: var(--text-muted); font-size: 14px; }
+.auth-label { margin: 10px 0 6px; font-size: 13px; font-weight: 600; }
+
+.auth-card input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.auth-card input:focus { outline: none; border-color: var(--accent); }
+
+.auth-info {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 14px;
+}
+
+.auth-actions { display: flex; gap: 8px; margin-top: 20px; }
+.auth-actions button { flex: 1; padding: 10px; }
+
+.secondary-button {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.secondary-button:hover { background: #f0f0f2; }
+
 /* 왼쪽 메뉴 */
 .sidebar {
+  display: flex;
+  flex-direction: column;
   background: var(--sidebar-bg);
   border-right: 1px solid var(--border);
   padding: 20px 12px;
+}
+
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding: 16px 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.account-email {
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 .brand {

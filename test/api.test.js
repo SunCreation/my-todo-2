@@ -12,7 +12,8 @@ const TODAY = '2026-10-29';
 // 임시 DB로 서버를 띄우고, 테스트가 끝나면 닫는다.
 async function startServer(dbPath = ':memory:') {
   const db = openDatabase(dbPath);
-  const app = createApp({ repository: createSqliteTodoRepository(db) });
+  const repository = createSqliteTodoRepository(db);
+  const app = createApp({ repositoryFor: () => repository });
   const server = await new Promise((resolve) => {
     const s = app.listen(0, () => resolve(s));
   });
@@ -192,4 +193,82 @@ test('앱을 재시작해도 SQLite 파일의 데이터가 유지된다', async 
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// 길 B의 백엔드 권한 검증 흐름을 실제 Supabase 없이 확인한다.
+// 가짜 auth: "Bearer token-<이름>" 이면 그 사용자로 인정하고, 사용자마다 별도 저장소를 쓴다.
+describe('로그인이 필요한 모드 (길 B 흐름)', () => {
+  let base;
+  let server;
+  const dbs = [];
+
+  before(async () => {
+    const express = require('express');
+    const repos = {};
+    const repoOf = (userId) => {
+      if (!repos[userId]) {
+        const db = openDatabase(':memory:');
+        dbs.push(db);
+        repos[userId] = createSqliteTodoRepository(db);
+      }
+      return repos[userId];
+    };
+    const router = express.Router();
+    router.post('/login', (req, res) => res.json({ access_token: `token-${req.body.email}` }));
+    const auth = {
+      router,
+      requireUser(req, res, next) {
+        const match = /^Bearer token-(.+)$/.exec(req.get('authorization') ?? '');
+        if (!match) return res.status(401).json({ error: '로그인이 필요합니다.' });
+        req.user = { id: match[1] };
+        next();
+      },
+    };
+    const app = createApp({ auth, repositoryFor: (req) => repoOf(req.user.id) });
+    server = await new Promise((resolve) => {
+      const s = app.listen(0, () => resolve(s));
+    });
+    base = `http://localhost:${server.address().port}`;
+  });
+  after(async () => {
+    await new Promise((resolve) => server.close(resolve));
+    dbs.forEach((db) => db.close());
+  });
+
+  const call = (method, url, token, body) => fetch(base + url, {
+    method,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  test('config가 로그인 필요를 알려 준다', async () => {
+    assert.deepEqual(await (await call('GET', '/api/config')).json(), { authRequired: true });
+  });
+
+  test('토큰 없이 할 일 API를 부르면 401', async () => {
+    assert.equal((await call('GET', '/api/todos')).status, 401);
+    assert.equal((await call('GET', '/api/categories')).status, 401);
+    assert.equal((await call('POST', '/api/todos', null, { title: 'x', category_id: 'work' })).status, 401);
+    assert.equal((await call('GET', '/api/todos', 'wrong-token')).status, 401);
+  });
+
+  test('로그인 API는 토큰 없이 호출할 수 있다', async () => {
+    const res = await call('POST', '/api/auth/login', null, { email: 'a' });
+    assert.equal(res.status, 200);
+  });
+
+  test('사용자마다 자기 할 일만 보이고, 남의 할 일은 수정·삭제할 수 없다', async () => {
+    const created = await (await call('POST', '/api/todos', 'token-a', { title: 'A의 할 일', category_id: 'work' })).json();
+
+    assert.equal((await (await call('GET', '/api/todos', 'token-a')).json()).length, 1);
+    assert.equal((await (await call('GET', '/api/todos', 'token-b')).json()).length, 0);
+    assert.equal((await call('PATCH', `/api/todos/${created.id}`, 'token-b', { is_completed: true })).status, 404);
+    assert.equal((await call('DELETE', `/api/todos/${created.id}`, 'token-b')).status, 404);
+
+    const [stillThere] = await (await call('GET', '/api/todos', 'token-a')).json();
+    assert.equal(stillThere.is_completed, false);
+  });
 });

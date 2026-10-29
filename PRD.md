@@ -160,9 +160,14 @@ Microsoft To Do의 간결한 화면을 참고하여 다음과 같이 구성한�
 | POST | `/api/todos` | 할 일 추가 (`title`, `category_id`, `due_date`) |
 | PATCH | `/api/todos/:id` | 완료 상태 변경 (`is_completed`) |
 | DELETE | `/api/todos/:id` | 할 일 삭제 |
+| GET | `/api/config` | 로그인 필요 여부 (`authRequired`) |
+| POST | `/api/auth/signup` | 회원가입 (길 B) |
+| POST | `/api/auth/login` | 로그인, 토큰 발급 (길 B) |
+| POST | `/api/auth/refresh` | 만료된 토큰 재발급 (길 B) |
 
 - 응답의 `is_completed`는 `true`/`false`로 반환한다.
 - 잘못된 입력은 `400`, 존재하지 않는 할 일은 `404`를 반환한다.
+- 길 B에서는 `/api/config`, `/api/auth/*`를 제외한 모든 API에 로그인 토큰이 필요하며, 없으면 `401`을 반환한다.
 
 ## 7. 데이터 저장 방식
 
@@ -178,6 +183,9 @@ Microsoft To Do의 간결한 화면을 참고하여 다음과 같이 구성한�
 - 기존 Todo 기능과 화면은 그대로 유지한다.
 - 길 A의 SQLite 데이터를 Supabase로 이전하는 기능은 구현하지 않는다. 길 B는 빈 DB에서 시작한다.
 - Supabase Auth를 이용하여 로그인 기능을 추가한다.
+  - 로그인·회원가입도 백엔드 API(`/api/auth/*`)가 Supabase Auth를 호출한다. 프론트엔드는 Supabase를 직접 호출하지 않으며, Supabase 주소와 키를 알지 못한다.
+  - 프론트엔드는 백엔드에서 받은 토큰을 `Authorization: Bearer <access token>` 헤더로 보낸다.
+- `.env`의 `DB_PROVIDER` 값(`sqlite` / `supabase`)으로 길 A와 길 B를 전환한다.
 - 접근 권한은 두 겹으로 검증한다.
   - **DB (RLS):** `todos`는 `user_id = auth.uid()`인 행만 조회·추가·수정·삭제할 수 있다. `categories`는 로그인한 사용자가 읽기만 할 수 있다.
   - **백엔드:** 모든 `/api` 요청에서 `Authorization: Bearer <access token>`을 검증하고, 토큰이 없거나 유효하지 않으면 `401`을 반환한다. 다른 사용자의 할 일을 수정·삭제하려 하면 `404`를 반환한다.
