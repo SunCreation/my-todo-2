@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Todo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <!-- 왼쪽 메뉴 -->
+    <aside class="sidebar">
+      <div class="brand">My Todo</div>
+      <nav>
+        <ul class="menu" id="main-menu">
+          <li><button type="button" class="menu-item" data-view="all">
+            <span class="menu-icon" aria-hidden="true">☰</span>전체 할 일
+          </button></li>
+          <li><button type="button" class="menu-item" data-view="today">
+            <span class="menu-icon" aria-hidden="true">◷</span>오늘 마감
+            <span class="badge" id="today-count" hidden></span>
+          </button></li>
+          <li><button type="button" class="menu-item" data-view="done">
+            <span class="menu-icon" aria-hidden="true">✓</span>완료한 일
+          </button></li>
+        </ul>
+        <div class="menu-heading">카테고리</div>
+        <ul class="menu" id="category-menu"></ul>
+      </nav>
+    </aside>
+
+    <!-- 오른쪽 메인 화면 -->
+    <main class="main">
+      <header class="main-header">
+        <h1 id="view-title">전체 할 일</h1>
+        <p class="today-text" id="today-text"></p>
+      </header>
+
+      <!-- 할 일 등록 영역 -->
+      <form class="add-form" id="add-form" autocomplete="off">
+        <input type="text" id="title-input" name="title" maxlength="200"
+               placeholder="할 일 추가" aria-label="할 일 제목" required>
+        <select id="category-select" name="category_id" aria-label="카테고리"></select>
+        <input type="date" id="due-input" name="due_date" aria-label="마감일">
+        <button type="submit" class="add-button">추가</button>
+      </form>
+      <p class="error" id="error" role="alert" hidden></p>
+
+      <ul class="todo-list" id="todo-list"></ul>
+      <p class="empty" id="empty" hidden></p>
+    </main>
+  </div>
+
+  <template id="todo-template">
+    <li class="todo">
+      <label class="check">
+        <input type="checkbox">
+        <span class="check-box" aria-hidden="true"></span>
+      </label>
+      <div class="todo-body">
+        <div class="todo-title"></div>
+        <div class="todo-meta">
+          <span class="chip"></span>
+          <span class="due"></span>
+        </div>
+      </div>
+      <button type="button" class="delete-button" aria-label="삭제" title="삭제">✕</button>
+    </li>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

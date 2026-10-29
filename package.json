@@ -1,0 +1,15 @@
+{
+  "name": "my-todo",
+  "version": "1.0.0",
+  "description": "카테고리와 마감일로 관리하는 할 일 웹 애플리케이션",
+  "private": true,
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "test": "node --test --test-reporter=spec"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.3.0"
+  }
+}
