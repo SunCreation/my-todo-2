@@ -42,6 +42,12 @@ npm run verify:rls   # Supabase 모드로 서버를 켠 상태에서, 계정 A·
 | --- | --- |
 | ![서버 끄기 전](docs/screenshots/local-before-restart.jpg) | ![서버 재시작 후](docs/screenshots/local-after-restart.jpg) |
 
+삭제 확인: "삭제 테스트"를 추가한 뒤 ✕ 버튼으로 삭제했다. (8개 → 7개)
+
+| 삭제 전 | 삭제 후 |
+| --- | --- |
+| ![로컬 삭제 전](docs/screenshots/local-delete-before.png) | ![로컬 삭제 후](docs/screenshots/local-delete-after.png) |
+
 서버 재시작 후 API로 조회한 결과:
 
 ```text
@@ -71,6 +77,12 @@ DB 파일: ...\261026\todo.db
 | 계정 A: 서버를 껐다 켠 후 | 계정 B: A의 할 일이 보이지 않음 |
 | --- | --- |
 | ![A 재시작 후](docs/screenshots/supabase-3-user-a-after-restart.png) | ![B](docs/screenshots/supabase-4-user-b.png) |
+
+삭제 확인: 계정 A로 "삭제 테스트"를 추가한 뒤 ✕ 버튼으로 삭제했다. (5개 → 4개)
+
+| 삭제 전 | 삭제 후 |
+| --- | --- |
+| ![Supabase 삭제 전](docs/screenshots/supabase-delete-before.png) | ![Supabase 삭제 후](docs/screenshots/supabase-delete-after.png) |
 
 Supabase 대시보드 Table Editor의 `todos` 표:
 
